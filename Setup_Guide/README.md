@@ -113,6 +113,65 @@ If no error → setup is correct ✅.
 
 ---
 
+### 🔹 Linker Script
+
+The linker script tells the compiler **where to place code and data** in STM32 flash and RAM.
+
+Example: `linker/stm32f103c8t6.ld`
+
+```ld
+/* Linker script for STM32F103C8T6 (64KB Flash, 20KB RAM) */
+
+MEMORY
+{
+  FLASH (rx) : ORIGIN = 0x08000000, LENGTH = 64K
+  RAM   (rwx): ORIGIN = 0x20000000, LENGTH = 20K
+}
+
+SECTIONS
+{
+  .isr_vector : 
+  {
+    KEEP(*(.isr_vector))     /* Startup vector table */
+  } > FLASH
+
+  .text :
+  {
+    *(.text*)                /* Code */
+    *(.rodata*)              /* Read-only data */
+    KEEP(*(.init))
+    KEEP(*(.fini))
+  } > FLASH
+
+  .data : AT (ADDR(.text) + SIZEOF(.text))
+  {
+    *(.data*)                /* Initialized data */
+  } > RAM
+
+  .bss :
+  {
+    *(.bss*)                 /* Zero-initialized data */
+    *(COMMON)
+  } > RAM
+
+  _estack = ORIGIN(RAM) + LENGTH(RAM); /* Initial stack pointer */
+}
+📌 Notes:
+
+FLASH → starts at 0x08000000 (STM32 internal Flash)
+
+RAM → starts at 0x20000000 (STM32 SRAM)
+
+.isr_vector → interrupt vector table (startup file must place it here)
+
+_estack → defines the top of RAM for the initial stack pointer
+
+The linker script may change depending on:
+
+MCU (Flash/RAM size)
+
+Bootloader presence (if Flash start is offset, e.g., 0x08002000)
+
 ## 2️⃣ Build Guide (Using build.bat)
 
 Once preparation is done, follow this to build your project.
